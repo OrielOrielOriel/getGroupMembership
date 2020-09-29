@@ -31,47 +31,45 @@ gFile = sys.argv[1]
 uFile = sys.argv[2]
 oFile = sys.argv[3]
 
-with open(oFile, 'w') as outputFile:
+with open(oFile, 'w') as outputFile, open(uFile, 'r') as usersFile, open(gFile, 'r') as groupsFile:
+	# usersJsonObj.keys() == dict_keys(['users', 'meta'])
+	# usersJsonObj['users'][0].keys() == dict_keys(['AllowedToDelegate', 'PrimaryGroupSid', 'HasSIDHistory', 'ObjectIdentifier', 'Aces', 'SPNTargets', 'Properties'])
+	# usersJsonObj['users'][0]['Properties'].keys() == dict_keys(['distinguishedname', 'domain', 'name', 'objectid', 'unconstraineddelegation', 'passwordnotreqd', 'highvalue'])
+	usersJsonObj = json.load(usersFile)
 
-	with open(uFile, 'r') as usersFile:
-		# usersJsonObj.keys() == dict_keys(['users', 'meta'])
-		# usersJsonObj['users'][0].keys() == dict_keys(['AllowedToDelegate', 'PrimaryGroupSid', 'HasSIDHistory', 'ObjectIdentifier', 'Aces', 'SPNTargets', 'Properties'])
-		# usersJsonObj['users'][0]['Properties'].keys() == dict_keys(['distinguishedname', 'domain', 'name', 'objectid', 'unconstraineddelegation', 'passwordnotreqd', 'highvalue'])
-		usersJsonObj = json.load(usersFile)
+	# groupJsonObj.keys() = dict_keys(['groups', 'meta'])
+	groupsJsonObj = json.load(groupsFile)
 
-		with open(gFile, 'r') as groupsFile:
-			# groupJsonObj.keys() = dict_keys(['groups', 'meta'])
-			groupsJsonObj = json.load(groupsFile)
+	# Gets written to file later
+	bigUserDict = {}
 
-			bigUserDict = {}
+	print("This is gonna take a while...")
 
-			print("This is gonna take a while...")
-			
-			# groupDict.keys() == dict_keys(['Aces', 'ObjectIdentifier', 'Properties', 'Members'])
-			for groupDict in groupsJsonObj['groups']:
+	# groupDict.keys() == dict_keys(['Aces', 'ObjectIdentifier', 'Properties', 'Members'])
+	for groupDict in groupsJsonObj['groups']:
 
-				# userDict.keys() == dict_keys(['MemberType', 'MemberId'])
-				for userDict in groupDict['Members']:
+		# userDict.keys() == dict_keys(['MemberType', 'MemberId'])
+		for userDict in groupDict['Members']:
 
-					# groupDict['Properties'].keys() == dict_keys(['distinguishedname', 'domain', 'highvalue', 'objectid', 'name'])
-					memberId = userDict['MemberId']
-					groupName = removeAtSign(groupDict['Properties']['name'])
-					userName = ""
+			# groupDict['Properties'].keys() == dict_keys(['distinguishedname', 'domain', 'highvalue', 'objectid', 'name'])
+			memberId = userDict['MemberId']
+			groupName = removeAtSign(groupDict['Properties']['name'])
+			userName = ""
 
-					for userObj in usersJsonObj['users']:
-						if not userObj['ObjectIdentifier'] == memberId:
-							pass
-						else: 
-							userName = userObj['Properties']['name']
-							break
+			for userObj in usersJsonObj['users']:
+				if not userObj['ObjectIdentifier'] == memberId:
+					pass
+				else: 
+					userName = userObj['Properties']['name']
+					break
 
-					if userName in bigUserDict:
-						bigUserDict[userName].append(groupName)
-					else:
-						bigUserDict.update({userName: [groupName]})
-			
-			for user in bigUserDict.keys():
-				groupString = ','.join(bigUserDict[user])
-				line = f"{user}\t{groupString}\n"
+			if userName in bigUserDict:
+				bigUserDict[userName].append(groupName)
+			else:
+				bigUserDict.update({userName: [groupName]})
+	
+	for user in bigUserDict.keys():
+		groupString = ','.join(bigUserDict[user])
+		line = f"{user}\t{groupString}\n"
 
-				outputFile.write(line)
+		outputFile.write(line)

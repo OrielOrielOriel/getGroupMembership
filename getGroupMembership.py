@@ -43,7 +43,7 @@ with open(oFile, 'w') as outputFile, open(uFile, 'r') as usersFile, open(gFile, 
 	# Gets written to file later
 	bigUserDict = {}
 
-	print("This is gonna take a while...")
+	print("This is gonna take a while...") # This shouldn't be in Python lol
 
 	# groupDict.keys() == dict_keys(['Aces', 'ObjectIdentifier', 'Properties', 'Members'])
 	for groupDict in groupsJsonObj['groups']:
